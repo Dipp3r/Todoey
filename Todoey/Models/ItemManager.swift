@@ -7,61 +7,49 @@
 
 
 import SwiftUI
+import CoreData
 
-class ItemManager: ObservableObject {
+class ItemManager {
     
-    @Published var itemArray: [TodoItem] = []
+    var context: NSManagedObjectContext
     
-    private var dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    init(_ viewContext: NSManagedObjectContext = PersistenceController.shared.container.viewContext){
+        self.context = viewContext
+    }
     
     func addItem(title: String, category: String, note: String) {
-        itemArray.append(TodoItem(title: title, description: note, category: category))
-        // Set UserDefaults
-        self.setUserDefaults()
+        let newItem = TodoItem(context: context)
+        newItem.category = category
+        newItem.title = title
+        newItem.isCompleted = false
+        newItem.note = note
+        newItem.showNote = false
+        newItem.addedTime = Date()
+        saveContext()
+    }
+    
+    func saveContext(){
+        withAnimation(.none) {
+            do {
+                try context.save()
+            } catch {
+                print("Error saving context: \(error.localizedDescription)")
+            }
+        }
     }
 
-    
     func deleteItem(_ item: TodoItem) {
-        if let index = itemArray.firstIndex(where: { $0.id == item.id }) {
-            itemArray.remove(at: index)
-        }
-        // Set UserDefaults
-        self.setUserDefaults()
+            context.delete(item)
+            saveContext()
     }
     
     func toggleCompletion(for item: TodoItem) {
-        if let index = itemArray.firstIndex(where: { $0.id == item.id }) {
-            itemArray[index].isCompleted.toggle()
-        }
-        // Set UserDefaults
-        self.setUserDefaults()
+            item.isCompleted.toggle()
+            saveContext()
     }
     
     func showDescription(for item: TodoItem) {
-        if let index = itemArray.firstIndex(where: { $0.id == item.id }) {
-            itemArray[index].showNote.toggle()
-        }
-        // Set UserDefaults
-        self.setUserDefaults()
-    }
-    
-    func setUserDefaults() {
-        let encoder = PropertyListEncoder()
-        if let encodedData = try? encoder.encode(self.itemArray) {
-            do {
-                try encodedData.write(to: dataFilePath!)
-            } catch {
-                print("Error writing encoded data to FilePath: \(String(describing: dataFilePath)). ERROR> \(error.localizedDescription)")
-            }
-        }
-    }
-    
-    func loadUserDefaults() {
-        if let data = try? Data(contentsOf: dataFilePath!) {
-            let decoder = PropertyListDecoder()
-            if let loadedItems = try? decoder.decode([TodoItem].self, from: data) {
-                self.itemArray = loadedItems
-            }
-        }
+            item.showNote.toggle()
+            saveContext()
     }
 }

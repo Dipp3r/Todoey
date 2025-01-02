@@ -17,11 +17,11 @@ struct TodoItemRow: View {
     var body: some View {
         VStack {
             HStack {
-                Text("\(item.title)")
+                Text(item.title)
                     .fontWeight(.regular)
                 Spacer()
                 if item.isCompleted {
-                    Image(systemName: "checkmark")
+                    Image(systemName: K.Image.checkmark)
                         .scaleEffect(0.9)
                         .foregroundColor(.purple)
                 }
@@ -32,41 +32,58 @@ struct TodoItemRow: View {
             }
             .swipeActions(allowsFullSwipe: true) {
                 Button(role: .destructive, action: onDelete) {
-                    Image(systemName: "trash").tint(.red)
+                    Image(systemName: K.Image.trash).tint(.red)
                 }
                 if item.note.isEmpty {
                     Button(action: onEdit ) {
-                        Image(systemName: "square.and.pencil")
+                        Image(systemName: K.Image.note)
                     }.tint(.orange)
                 } else {
                     Button(action: onShowDetail ) {
-                        Image(systemName: item.showNote ? "eye.slash" : "eye")
+                        Image(systemName: item.showNote ? K.Image.eyeslash : K.Image.eye)
                     }.tint(.blue)
                 }
             }
             
             if item.showNote && !item.note.isEmpty {
-                VStack{
-                    HStack {
-                        Text(item.note)
-                            .font(.system(size: 15))
-                            .foregroundColor(.purple)
-                            .italic()
-                        Spacer()
-                    }
-                }.padding(.all, 5)
+                DescriptionView(with: item.note)
             }
         }
     }
 }
 
+struct DescriptionView: View {
+    let inputText: String
+    init(with input: String) {
+        self.inputText = input
+    }
+    var body: some View {
+        VStack{
+            HStack {
+                Text(inputText)
+                    .font(.system(size: 15))
+                    .foregroundColor(.purple)
+                    .italic()
+                Spacer()
+            }
+        }.padding(.all, 5)
+    }
+}
+
+
+func previewTodoItem() -> TodoItem {
+    let newItem = TodoItem()
+    newItem.title = "Sample item"
+    newItem.category = "General"
+    newItem.note = "This is a sample item."
+    newItem.isCompleted = false
+    newItem.showNote = false
+    return newItem
+}
+
 #Preview(traits: .sizeThatFitsLayout) {
     TodoItemRow(
-        item: TodoItem(
-            title: "Sample Todo",
-            description: "buy 1 egg",
-            category: "Groceries"
-        ),
+        item: previewTodoItem(),
         onToggleCompletion: {
             print("Toggle completion tapped in preview.")
         },
@@ -81,3 +98,5 @@ struct TodoItemRow: View {
         }
     )
 }
+
+

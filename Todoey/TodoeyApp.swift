@@ -27,9 +27,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct TodoeyApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    var persistenceController = PersistenceController.shared
     var body: some Scene {
         WindowGroup {
             ToDoListContentView()
+                .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
     }
 }

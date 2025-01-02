@@ -8,11 +8,14 @@
 import SwiftUI
 
 struct ToDoListContentView: View {
+    @Environment(\.managedObjectContext) private var viewContext
     
-    @ObservedObject var itemManager = ItemManager()
+    
     @State private var showDetail: Bool = false
     
-    var defaults = UserDefaults.standard
+    @FetchRequest(sortDescriptors: [NSSortDescriptor(keyPath: \TodoItem.addedTime, ascending: true)], animation: .default) private var items: FetchedResults<TodoItem>
+    
+    var itemManager: ItemManager = ItemManager()
     
     init() {
         let appearance = UINavigationBarAppearance()
@@ -25,41 +28,45 @@ struct ToDoListContentView: View {
             .foregroundColor: UIColor.systemPurple
         ]
         UINavigationBar.appearance().standardAppearance = appearance
+        
     }
     
     // Helper property to group items by category
     private var groupedItems: [String: [TodoItem]] {
-        Dictionary(grouping: itemManager.itemArray, by: { $0.category })
+        Dictionary(grouping: items, by: { $0.category })
     }
     
     var body: some View {
         NavigationView {
             ZStack {
-                if itemManager.itemArray.isEmpty {
+                if items.isEmpty {
                     emptyListView
                 } else {
                     groupedItemList
                 }
             }
-            .navigationTitle("Todo List")
+            .navigationTitle(K.Title.navigation)
             .toolbar {
                 addButton
             }
             .onAppear {
                 // Load from UserDefaults
-                itemManager.loadUserDefaults()
+//                itemManager.loadUserDefaults()
             }
             .scrollContentBackground(.hidden)
-            .background(Color("BackgroundColor"))
+            .background(Color(K.Color.background))
+        }
+        .onAppear(){
+            itemManager.context = viewContext
         }
     }
 
     private var emptyListView: some View {
         VStack {
-            Text("Your list is empty")
-                .foregroundColor(.secondary)
-            Text("Add an item to get started!")
-                .foregroundColor(.secondary)
+            ForEach(K.Empty.listView, id: \.self) { msg in
+                Text(msg)
+                    .foregroundColor(.secondary)
+            }
         }
         .background(Color(.systemBackground))
     }

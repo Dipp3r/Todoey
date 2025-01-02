@@ -9,18 +9,16 @@ import SwiftUI
 import CoreData
 
 struct AddItemView: View {
-    
-    @State var titleText: String = ""
-    @State var noteText: String = ""
-    
-    var categories: [String] = ["General", "Groceries", "Work", "Personal", "Finance", "Games", "Shopping", "Travel & Vacation", "Food & Drinks", "Sports", "Emergency"].reversed()
-    
-    @State private var selectedCategory: String = "General"
-    
-    let defaults = UserDefaults.standard
-    
-    @ObservedObject var itemManager: ItemManager
     @Environment(\.presentationMode) var presentationMode
+    
+    @State var titleText: String = K.Empty.text
+    @State var noteText: String = K.Empty.text
+    @State private var selectedCategory: String = K.Category.general
+    
+    
+    var itemManager: ItemManager
+    var categories: [String] = K.Category.list.reversed()
+    
     
     init(_ itemManager: ItemManager){
         self.itemManager = itemManager
@@ -30,23 +28,23 @@ struct AddItemView: View {
         NavigationView{
             VStack {
                 VStack {
-                    TextField("Title", text: $titleText)
+                    TextField(K.Title.text, text: $titleText)
                         .frame(height: 50)
-                        .background(Color("TextBoxColor"))
+                        .background(Color(K.Color.textbox))
                         .cornerRadius(5)
                         .padding(.leading)
                         .font(.none)
                     Divider()
                         .padding(.leading, 20)
                     TextEditor(text: $noteText)
-                        .background(Color("TextBoxColor"))
+                        .background(Color(K.Color.textbox))
                         .scrollContentBackground(.hidden)
                         .padding(.leading)
                         .frame(maxHeight: 150)
                         .cornerRadius(5)
                         .font(.none)
                 }
-                .background(Color("TextBoxColor"))
+                .background(Color(K.Color.textbox))
                 .cornerRadius(10)
                 Menu {
                     // Create a menu item for each category
@@ -58,7 +56,7 @@ struct AddItemView: View {
                                 Text(category)
                                 if selectedCategory == category {
                                     Spacer()
-                                    Image(systemName: "checkmark")
+                                    Image(systemName: K.Image.checkmark)
                                         .foregroundColor(.blue)
                                 }
                             }
@@ -66,12 +64,12 @@ struct AddItemView: View {
                     }
                 } label: {
                     List{
-                        Label(selectedCategory, systemImage: "list.bullet")
+                        Label(selectedCategory, systemImage: K.Image.listbullet)
                     }
                     .frame(maxWidth: .infinity, maxHeight: 100) //
                     
                 }
-                .background(Color("BackgroundColor"))
+                .background(Color(K.Color.background))
                 .scrollContentBackground(.hidden)
                 Spacer()
             }
@@ -79,7 +77,7 @@ struct AddItemView: View {
             .padding(.all, 20)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") {
+                    Button(K.Title.cancel) {
                         presentationMode.wrappedValue.dismiss()
                     }
                     .font(.none)
@@ -90,7 +88,7 @@ struct AddItemView: View {
                         itemManager.addItem(title: self.titleText, category: self.selectedCategory, note: self.noteText)
                         presentationMode.wrappedValue.dismiss()
                     } label: {
-                        Text("Add")
+                        Text(K.Title.add)
                             .fontWeight(.bold)
                     }
                     .disabled(titleText.isEmpty ? true : false)
@@ -98,11 +96,12 @@ struct AddItemView: View {
 
                 }
             }
-            .background(Color("BackgroundColor"))
+            .background(Color(K.Color.background))
         }
     }
 }
 
 #Preview {
-    AddItemView(ItemManager())
+    @Previewable @Environment(\.managedObjectContext) var viewContext
+    AddItemView(ItemManager(viewContext))
 }
