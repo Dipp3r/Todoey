@@ -18,7 +18,7 @@ struct PersistenceController {
             let newItem = TodoItem(context: viewContext)
             newItem.title = "Item \(index)"
             newItem.note = "Description \(index)"
-            newItem.category = "General"
+            newItem.parentCategory = Category()
             newItem.isCompleted = false
             newItem.showNote = false
         }

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct TodoItemRow: View {
-    var item: TodoItem
+    @ObservedObject var item: TodoItem
     var onToggleCompletion: () -> Void
     var onDelete: () -> Void
     var onShowDetail: () -> Void
@@ -72,9 +72,11 @@ struct DescriptionView: View {
 
 
 func previewTodoItem() -> TodoItem {
+    let category = Category()
+    category.name = "Sample category"
     let newItem = TodoItem()
     newItem.title = "Sample item"
-    newItem.category = "General"
+    newItem.parentCategory = category
     newItem.note = "This is a sample item."
     newItem.isCompleted = false
     newItem.showNote = false
@@ -98,5 +100,3 @@ func previewTodoItem() -> TodoItem {
         }
     )
 }
-
-

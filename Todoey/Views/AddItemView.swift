@@ -13,20 +13,23 @@ struct AddItemView: View {
     
     @State var titleText: String = K.Empty.text
     @State var noteText: String = K.Empty.text
-    @State private var selectedCategory: String = K.Category.general
+    @State private var selectedCategory: Category?
     
+    @FetchRequest(sortDescriptors: [NSSortDescriptor(keyPath: \Category.name, ascending: true)], animation: .default)
+    private var categories: FetchedResults<Category>
     
     var itemManager: ItemManager
-    var categories: [String] = K.Category.list.reversed()
+    var currentCategory: Category?
     
-    
-    init(_ itemManager: ItemManager){
+    init(_ itemManager: ItemManager, _ category: Category?) {
         self.itemManager = itemManager
+        self.currentCategory = category
     }
     
     var body: some View {
-        NavigationView{
+        NavigationView {
             VStack {
+                // Title and Note fields
                 VStack {
                     TextField(K.Title.text, text: $titleText)
                         .frame(height: 50)
@@ -46,54 +49,72 @@ struct AddItemView: View {
                 }
                 .background(Color(K.Color.textbox))
                 .cornerRadius(10)
-                Menu {
-                    // Create a menu item for each category
-                    ForEach(categories, id: \.self) { category in
-                        Button(action: {
-                            selectedCategory = category
-                        }) {
-                            HStack {
-                                Text(category)
-                                if selectedCategory == category {
-                                    Spacer()
-                                    Image(systemName: K.Image.checkmark)
-                                        .foregroundColor(.blue)
+                
+                // Display selected category
+                if let safeCategory = currentCategory {
+                    HStack {
+                        Image(systemName: K.Image.listbullet)
+                            .foregroundColor(.purple)
+                        Text("\(safeCategory.name)")
+                        Spacer()
+                    }
+                    .padding(.all)
+                } else {
+                    Menu {
+                        ForEach(categories, id: \.self) { category in
+                            Button(action: {
+                                selectedCategory = category
+                            }) {
+                                HStack {
+                                    Text(category.name)
+                                    if selectedCategory == category {
+                                        Spacer()
+                                        Image(systemName: K.Image.checkmark)
+                                            .foregroundColor(.blue)
+                                    }
                                 }
                             }
                         }
+                    } label: {
+                        List{
+                            Label(selectedCategory?.name ?? "Choose a category", systemImage: K.Image.listbullet)
+                        }
+                        .font(.none)
+                        .frame(maxWidth: .infinity, maxHeight: 100)
                     }
-                } label: {
-                    List{
-                        Label(selectedCategory, systemImage: K.Image.listbullet)
+                    .background(Color(K.Color.background))
+                    .scrollContentBackground(.hidden)
+                    .onAppear {
+                        // Automatically select the first category if available
+                        if selectedCategory == nil, let firstCategory = categories.first {
+                            selectedCategory = firstCategory
+                        }
                     }
-                    .frame(maxWidth: .infinity, maxHeight: 100) //
-                    
                 }
-                .background(Color(K.Color.background))
-                .scrollContentBackground(.hidden)
+                
                 Spacer()
             }
-            
             .padding(.all, 20)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(K.Title.cancel) {
                         presentationMode.wrappedValue.dismiss()
                     }
-                    .font(.none)
                 }
                 
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        itemManager.addItem(title: self.titleText, category: self.selectedCategory, note: self.noteText)
+                        if let selectedCategory = selectedCategory {
+                            itemManager.addItem(title: self.titleText, category: selectedCategory, note: self.noteText)
+                        } else {
+                            itemManager.addItem(title: self.titleText, category: currentCategory!, note: self.noteText)
+                        }
                         presentationMode.wrappedValue.dismiss()
                     } label: {
                         Text(K.Title.add)
                             .fontWeight(.bold)
                     }
-                    .disabled(titleText.isEmpty ? true : false)
-                    .font(.none)
-
+                    .disabled(titleText.isEmpty)
                 }
             }
             .background(Color(K.Color.background))
@@ -103,5 +124,5 @@ struct AddItemView: View {
 
 #Preview {
     @Previewable @Environment(\.managedObjectContext) var viewContext
-    AddItemView(ItemManager(viewContext))
+    AddItemView(ItemManager(viewContext), nil)
 }

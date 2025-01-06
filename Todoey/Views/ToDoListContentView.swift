@@ -6,18 +6,26 @@
 //
 
 import SwiftUI
+import CoreData
 
 struct ToDoListContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.itemManager) private var itemManager
     
+    @FetchRequest var items: FetchedResults<TodoItem>
     
     @State private var showDetail: Bool = false
+    @State private var searchText = ""
     
-    @FetchRequest(sortDescriptors: [NSSortDescriptor(keyPath: \TodoItem.addedTime, ascending: true)], animation: .default) private var items: FetchedResults<TodoItem>
+    private var selectedCategory: Category?
     
-    var itemManager: ItemManager = ItemManager()
-    
-    init() {
+    init(_ category: Category?) {
+        self.selectedCategory = category
+        let predicate: NSPredicate? = category != nil ? NSPredicate(format: "parentCategory == %@", category!) : nil
+        _items = FetchRequest<TodoItem>(
+            sortDescriptors: [NSSortDescriptor(keyPath: \TodoItem.title, ascending: true)],
+            predicate: predicate
+        )
         let appearance = UINavigationBarAppearance()
         appearance.titleTextAttributes = [
             .font: UIFont.systemFont(ofSize: 20, weight: .semibold),
@@ -31,31 +39,49 @@ struct ToDoListContentView: View {
         
     }
     
-    // Helper property to group items by category
-    private var groupedItems: [String: [TodoItem]] {
-        Dictionary(grouping: items, by: { $0.category })
+    private var filteredItems: [TodoItem] {
+        let request: NSFetchRequest<TodoItem> = TodoItem.fetchRequest()
+        request.predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchText)
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \TodoItem.title, ascending: true)]
+        do {
+            return try viewContext.fetch(request)
+        } catch {
+            print(error.localizedDescription)
+            return []
+        }
+    }
+    
+    // Helper function to group items by category
+    private func groupItems(from items: [TodoItem]) -> [String: [TodoItem]] {
+        Dictionary(grouping: items, by: { $0.parentCategory.name })
+    }
+    
+    // Filtered grouped items based on the search text
+    private var filteredGroupedItems: [String: [TodoItem]] {
+        searchText.isEmpty ? groupItems(from: Array(items)) : groupItems(from: filteredItems)
     }
     
     var body: some View {
+        
         NavigationView {
             ZStack {
                 if items.isEmpty {
                     emptyListView
                 } else {
                     groupedItemList
+                        
                 }
             }
-            .navigationTitle(K.Title.navigation)
+            .navigationTitle((selectedCategory?.name ?? K.Title.navigation) + " List")
             .toolbar {
                 addButton
             }
             .onAppear {
-                // Load from UserDefaults
-//                itemManager.loadUserDefaults()
             }
             .scrollContentBackground(.hidden)
             .background(Color(K.Color.background))
         }
+        
         .onAppear(){
             itemManager.context = viewContext
         }
@@ -73,9 +99,9 @@ struct ToDoListContentView: View {
 
     private var groupedItemList: some View {
         List {
-            ForEach(groupedItems.keys.sorted(), id: \.self) { category in
+            ForEach(filteredGroupedItems.keys.sorted(), id: \.self) { category in
                 Section(header: Text(category)) {
-                    ForEach(groupedItems[category] ?? []) { item in
+                    ForEach(filteredGroupedItems[category] ?? []) { item in
                         TodoItemRow(
                             item: item,
                             onToggleCompletion: { itemManager.toggleCompletion(for: item) },
@@ -84,9 +110,11 @@ struct ToDoListContentView: View {
                             onEdit: { print("Edit description pending") }
                         )
                     }
+                    
                 }
             }
         }
+        .searchable(text: $searchText)
     }
 
     private var addButton: some View {
@@ -94,7 +122,7 @@ struct ToDoListContentView: View {
             showDetail.toggle()
         }
         .sheet(isPresented: $showDetail) {
-            AddItemView(itemManager)
+            AddItemView(itemManager, self.selectedCategory)
         }
         .buttonStyle(.bordered)
         .font(.headline)
@@ -103,5 +131,7 @@ struct ToDoListContentView: View {
 }
 
 #Preview {
-    ToDoListContentView()
+    let context = PersistenceController.shared.container.viewContext
+    return ToDoListContentView(nil)
+            .environment(\.managedObjectContext, context)
 }

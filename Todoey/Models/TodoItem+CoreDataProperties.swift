@@ -2,7 +2,7 @@
 //  TodoItem+CoreDataProperties.swift
 //  Todoey
 //
-//  Created by Arun K on 1/1/25.
+//  Created by Arun K on 3/1/25.
 //
 //
 
@@ -16,13 +16,12 @@ extension TodoItem {
         return NSFetchRequest<TodoItem>(entityName: "TodoItem")
     }
 
-    @NSManaged public var category: String
+    @NSManaged public var addedTime: Date
+    @NSManaged public var isCompleted: Bool
     @NSManaged public var note: String
     @NSManaged public var showNote: Bool
-    @NSManaged public var isCompleted: Bool
     @NSManaged public var title: String
-    @NSManaged public var addedTime: Date
-    
+    @NSManaged public var parentCategory: Category
 
 }
 

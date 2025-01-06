@@ -11,21 +11,36 @@ import CoreData
 
 class ItemManager {
     
+    static public var singleton = ItemManager()
+    
     var context: NSManagedObjectContext
     
     init(_ viewContext: NSManagedObjectContext = PersistenceController.shared.container.viewContext){
         self.context = viewContext
     }
     
-    func addItem(title: String, category: String, note: String) {
+    func addItem(title: String, category: Category, note: String) {
         let newItem = TodoItem(context: context)
-        newItem.category = category
+        newItem.parentCategory = category
         newItem.title = title
         newItem.isCompleted = false
         newItem.note = note
         newItem.showNote = false
         newItem.addedTime = Date()
         saveContext()
+    }
+    
+    func deleteAllItems(withCategory category: Category) {
+        let request: NSFetchRequest<TodoItem> = TodoItem.fetchRequest()
+        request.predicate = NSPredicate(format: "parentCategory == %@", category)
+        do {
+            let items = try context.fetch(request)
+            for item in items {
+                context.delete(item)
+            }
+        } catch {
+            print("Error while deleting items with category: \(category.name), E: \(error.localizedDescription)")
+        }
     }
     
     func saveContext(){

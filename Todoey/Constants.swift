@@ -19,7 +19,7 @@ struct K {
     }
     
     struct Title {
-        static let navigation: String = "Todo List"
+        static let navigation: String = "Todo"
         static let text: String = "Title"
         static let cancel: String = "cancel"
         static let add: String = "add"

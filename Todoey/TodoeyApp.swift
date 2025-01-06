@@ -30,8 +30,14 @@ struct TodoeyApp: App {
     var persistenceController = PersistenceController.shared
     var body: some Scene {
         WindowGroup {
-            ToDoListContentView()
+            CategoryContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .environment(\.itemManager, ItemManager.singleton)
         }
     }
+}
+
+
+extension EnvironmentValues {
+    @Entry var itemManager: ItemManager = ItemManager.singleton
 }
